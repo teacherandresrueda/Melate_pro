@@ -70,3 +70,14 @@ if st.session_state.get("login"):
         mejor = sorted(random.sample(range(1,40),6))
 
         st.success(f"🔥 Mejor jugada sugerida: {mejor}")
+
+st.markdown("""
+<style>
+body {
+    background-color: #0e1117;
+}
+h1, h2, h3 {
+    color: #00ffcc;
+}
+</style>
+""", unsafe_allow_html=True)
