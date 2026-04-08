@@ -1,83 +1,115 @@
 import streamlit as st
-from auth import *
 import random
+from collections import Counter
 
-st.set_page_config(page_title="Melate AI System 💀", layout="wide")
+st.set_page_config(page_title="RetroCore AI 💀", layout="wide")
 
-crear_tabla()
-
-# ======================
-# LOGIN
-# ======================
-menu = st.sidebar.selectbox("Acceso", ["Login", "Registro"])
-
-if menu == "Registro":
-    user = st.text_input("Usuario")
-    password = st.text_input("Contraseña", type="password")
-
-    if st.button("Crear cuenta"):
-        registrar(user, password)
-        st.success("Cuenta creada")
-
-elif menu == "Login":
-    user = st.text_input("Usuario")
-    password = st.text_input("Contraseña", type="password")
-
-    if st.button("Entrar"):
-        if login(user, password):
-            st.session_state["login"] = True
-        else:
-            st.error("Datos incorrectos")
+st.title("🔥 RetroCore AI")
 
 # ======================
-# SISTEMA PRINCIPAL
+# DATA BASE (temporal)
 # ======================
-if st.session_state.get("login"):
+if "resultados" not in st.session_state:
+    st.session_state.resultados = [
+        {"fecha": "2026-04-04", "numeros": [7,12,22,31,37,38]},
+        {"fecha": "2026-04-01", "numeros": [4,11,17,22,26,39]},
+        {"fecha": "2026-03-28", "numeros": [13,14,24,29,31,35]},
+    ]
 
-    st.title("🔥 Melate AI Premium")
+if "jugadas" not in st.session_state:
+    st.session_state.jugadas = [
+        {"fecha": "2026-04-04", "numeros": [7,12,22,31,37,47]},
+        {"fecha": "2026-04-01", "numeros": [4,7,12,17,22,31]},
+    ]
 
-    seccion = st.sidebar.selectbox("Sistema", [
-        "Dashboard",
-        "Generador Inteligente",
-        "Top Jugada"
-    ])
+# ======================
+# MENU
+# ======================
+menu = st.sidebar.selectbox("⚙️ Sistema", [
+    "📊 Dashboard",
+    "🧠 Generador",
+    "💀 Mejor Jugada",
+    "📈 Evidencia"
+])
 
-    # ======================
-    # GENERADOR
-    # ======================
-    if seccion == "Generador Inteligente":
+# ======================
+# 📊 DASHBOARD
+# ======================
+if menu == "📊 Dashboard":
 
-        st.subheader("🧠 Generador basado en tu patrón")
+    st.subheader("📊 Rendimiento")
 
-        base = [7,22,31]
+    total_aciertos = 0
+    total = 0
 
-        jugadas = []
+    for o in st.session_state.resultados:
+        for j in st.session_state.jugadas:
+            if o["fecha"] == j["fecha"]:
 
-        for _ in range(5):
-            j = set(base)
-            while len(j) < 6:
-                j.add(random.randint(1,39))
-            jugadas.append(sorted(list(j)))
+                aciertos = set(o["numeros"]) & set(j["numeros"])
+                total_aciertos += len(aciertos)
+                total += 1
 
-        for j in jugadas:
-            st.write(j)
+                st.write(f"📅 {o['fecha']}")
+                st.write(f"Aciertos: {len(aciertos)} → {list(aciertos)}")
 
-    # ======================
-    # TOP JUGADA
-    # ======================
-    if seccion == "Top Jugada":
+    if total > 0:
+        st.metric("Promedio", round(total_aciertos/total,2))
 
-        mejor = sorted(random.sample(range(1,40),6))
+# ======================
+# 🧠 GENERADOR
+# ======================
+elif menu == "🧠 Generador":
 
-        st.success(f"🔥 Mejor jugada sugerida: {mejor}")
+    st.subheader("Generador Inteligente")
 
-st.markdown("""
-<style>
-body {
-    background-color: #0e1117;
-}
-h1, h2, h3 {
-    color: #00ffcc;
-}
-</style>
-""", unsafe_allow_html=True)
+    base = [7,22,31]
+
+    for i in range(3):
+        j = set(base)
+
+        while len(j) < 6:
+            j.add(random.randint(1,39))
+
+        st.write(f"Jugada {i+1}: {sorted(j)}")
+
+# ======================
+# 💀 MEJOR JUGADA
+# ======================
+elif menu == "💀 Mejor Jugada":
+
+    resultados = st.session_state.resultados
+
+    freq = Counter([n for r in resultados for n in r["numeros"]])
+
+    mejor = sorted([n for n,_ in freq.most_common(6)])
+
+    st.success(f"🔥 Mejor jugada basada en datos: {mejor}")
+
+# ======================
+# 📈 EVIDENCIA
+# ======================
+elif menu == "📈 Evidencia":
+
+    st.subheader("📈 Evidencia del sistema")
+
+    historial = []
+
+    for o in st.session_state.resultados:
+        for j in st.session_state.jugadas:
+            if o["fecha"] == j["fecha"]:
+
+                aciertos = len(set(o["numeros"]) & set(j["numeros"]))
+
+                historial.append(aciertos)
+
+    if historial:
+        st.write("Historial de aciertos:", historial)
+
+        st.line_chart(historial)
+
+        st.metric("Mejor resultado", max(historial))
+        st.metric("Promedio", round(sum(historial)/len(historial),2))
+
+    else:
+        st.warning("Aún no hay datos suficientes")
